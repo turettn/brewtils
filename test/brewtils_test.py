@@ -72,22 +72,20 @@ class TestBrewtils(object):
         assert config.bg_host == 'the_host'
 
     def test_load_config_extra_spec(self):
-        # Still always need a host
         os.environ['BG_HOST'] = 'the_host'
+        os.environ['SOME_PARAMETER'] = 'param'
 
         spec = {
             "some_parameter": {
                 "type": "str",
                 "description": "Another required parameter",
+                "env_name": "SOME_PARAMETER",
+                "apply_env_prefix": False,
             },
         }
 
-        config = brewtils.load_config(merge_specification=spec,
-                                      some_parameter='param')
+        config = brewtils.load_config(merge_specification=spec)
         assert config.some_parameter == 'param'
-
-        with pytest.raises(YapconfItemNotFound):
-            brewtils.load_config(merge_specification=spec)
 
     def test_get_easy_client(self):
         client = brewtils.get_easy_client(host='bg_host')
