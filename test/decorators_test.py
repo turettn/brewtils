@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import wrapt
+
+import functools
 
 import pytest
 from mock import Mock, call, patch
@@ -61,6 +64,61 @@ class TestSystem(object):
     def test_system(self, sys):
         assert 1 == len(sys._commands)
         assert "foo" == sys._commands[0].name
+
+    def test_decorated_command(self, param_definition):
+        def decorator(wrapped):
+            @functools.wraps(wrapped)
+            def wrapper(*args, **kwargs):
+                return wrapped(*args, **kwargs)
+            return wrapper
+
+        @system
+        class SystemClass(object):
+
+            @decorator
+            @parameter(**param_definition)
+            @command(command_type="INFO", output_type="JSON")
+            def cmd(self, foo):
+                return foo
+
+        assert len(SystemClass._commands) == 1
+        assert SystemClass._commands[0].name == "cmd"
+        assert SystemClass._commands[0].command_type == "INFO"
+        assert SystemClass._commands[0].output_type == "JSON"
+        assert len(SystemClass._commands[0].parameters) == 1
+        assert_parameter_equal(
+            SystemClass._commands[0].parameters[0], Parameter(**param_definition)
+        )
+
+        client = SystemClass()
+        assert client.cmd("bar") == "bar"
+
+    def test_decorated_command_fail(self, param_definition):
+
+        @wrapt.decorator
+        def pass_through(wrapped, _, args, kwargs):
+            return wrapped(*args, **kwargs)
+
+        @system
+        class SystemClass(object):
+
+            @pass_through
+            @parameter(**param_definition)
+            @command(command_type="INFO", output_type="JSON")
+            def cmd(self, foo):
+                return foo
+
+        assert len(SystemClass._commands) == 1
+        assert SystemClass._commands[0].name == "cmd"
+        assert SystemClass._commands[0].command_type == "INFO"
+        assert SystemClass._commands[0].output_type == "JSON"
+        assert len(SystemClass._commands[0].parameters) == 1
+        assert_parameter_equal(
+            SystemClass._commands[0].parameters[0], Parameter(**param_definition)
+        )
+
+        client = SystemClass()
+        assert client.cmd("bar") == "bar"
 
 
 class TestParameter(object):
@@ -487,6 +545,30 @@ class TestDecoratorCombinations(object):
     def test_parameter_then_command(self, cmd, param_definition):
         @command(command_type="INFO", output_type="JSON")
         @parameter(**param_definition)
+        def _cmd(_, foo):
+            return foo
+
+        assert hasattr(_cmd, "_command")
+        assert _cmd._command.name == "_cmd"
+        assert _cmd._command.command_type == "INFO"
+        assert _cmd._command.output_type == "JSON"
+        assert len(_cmd._command.parameters) == 1
+
+        assert_parameter_equal(
+            _cmd._command.parameters[0], Parameter(**param_definition)
+        )
+
+    def test_decorated_method(self, cmd, param_definition):
+
+        def decorator(wrapped):
+            @functools.wraps(wrapped)
+            def wrapper():
+                return wrapped()
+            return wrapper
+
+        @decorator
+        @parameter(**param_definition)
+        @command(command_type="INFO", output_type="JSON")
         def _cmd(_, foo):
             return foo
 
