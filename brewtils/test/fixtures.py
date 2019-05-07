@@ -139,6 +139,7 @@ def command_dict(parameter_dict, system_id):
         "template": "<html></html>",
         "icon_name": "icon!",
         "system": {"id": system_id},
+        "namespace": "default",
     }
 
 
@@ -176,6 +177,7 @@ def instance_dict(ts_epoch):
         },
         "status_info": {"heartbeat": ts_epoch},
         "metadata": {},
+        "namespace": "default",
     }
 
 
@@ -201,6 +203,7 @@ def system_dict(instance_dict, command_dict, system_id):
         "icon_name": "fa-beer",
         "display_name": "non-offensive",
         "metadata": {"some": "stuff"},
+        "namespace": "default",
     }
 
 
@@ -234,6 +237,7 @@ def child_request_dict(ts_epoch):
         "metadata": {"child": "stuff"},
         "has_parent": True,
         "requester": "user",
+        "namespace": "default",
     }
 
 
@@ -268,6 +272,7 @@ def parent_request_dict(ts_epoch):
         "metadata": {"parent": "stuff"},
         "has_parent": False,
         "requester": "user",
+        "namespace": "default",
     }
 
 
@@ -291,6 +296,7 @@ def request_template_dict():
         "parameters": {"message": "hey!"},
         "comment": "hi!",
         "metadata": {"request": "stuff"},
+        "namespace": "default",
     }
 
 
@@ -323,6 +329,7 @@ def request_dict(parent_request_dict, child_request_dict, ts_epoch):
         "metadata": {"request": "stuff"},
         "has_parent": True,
         "requester": "user",
+        "namespace": "default",
     }
 
 
@@ -399,6 +406,7 @@ def event_dict(ts_epoch, request_dict):
         "payload": {"id": request_dict["id"]},
         "metadata": {"extra": "info"},
         "timestamp": ts_epoch,
+        "namespace": "default",
     }
 
 
@@ -421,6 +429,7 @@ def queue_dict(system_id):
         "system_id": system_id,
         "display": "foo.1-0-0.default",
         "size": 3,
+        "namespace": "default",
     }
 
 
@@ -457,6 +466,7 @@ def nested_role_dict():
         "description": "The anonymous role",
         "roles": [],
         "permissions": ["bg-request-read"],
+        "namespace": "default",
     }
 
 
@@ -473,6 +483,7 @@ def role_dict(nested_role_dict):
         "description": "The admin role",
         "roles": [nested_role_dict],
         "permissions": ["bg-all"],
+        "namespace": "default",
     }
 
 
@@ -498,6 +509,7 @@ def job_dict(ts_epoch, request_template_dict, date_trigger_dict):
         "success_count": 0,
         "error_count": 0,
         "status": "RUNNING",
+        "namespace": "default",
     }
 
 

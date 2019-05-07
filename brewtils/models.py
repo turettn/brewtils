@@ -67,6 +67,7 @@ class Command(object):
         template=None,
         icon_name=None,
         system=None,
+        namespace=None,
     ):
         self.name = name
         self.description = description
@@ -79,12 +80,13 @@ class Command(object):
         self.template = template
         self.icon_name = icon_name
         self.system = system
+        self.namespace = namespace
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        return "<Command: %s>" % self.name
+        return "<Command: name=%s, namespace=%s>" % (self.name, self.namespace)
 
     def parameter_keys(self):
         """Convenience Method for returning all the keys of this command's parameters.
@@ -153,6 +155,7 @@ class Instance(object):
         queue_info=None,
         icon_name=None,
         metadata=None,
+        namespace=None,
     ):
         self.name = name
         self.description = description
@@ -163,12 +166,17 @@ class Instance(object):
         self.queue_info = queue_info or {}
         self.icon_name = icon_name
         self.metadata = metadata or {}
+        self.namespace = namespace
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        return "<Instance: name=%s, status=%s>" % (self.name, self.status)
+        return "<Instance: name=%s, status=%s, namespace=%s>" % (
+            self.name,
+            self.status,
+            self.namespace,
+        )
 
 
 class Choices(object):
@@ -303,6 +311,7 @@ class RequestTemplate(object):
         parameters=None,
         comment=None,
         metadata=None,
+        namespace=None,
     ):
         self.system = system
         self.system_version = system_version
@@ -311,6 +320,7 @@ class RequestTemplate(object):
         self.parameters = parameters
         self.comment = comment
         self.metadata = metadata or {}
+        self.namespace = namespace
 
     def __str__(self):
         return self.command
@@ -318,8 +328,14 @@ class RequestTemplate(object):
     def __repr__(self):
         return (
             "<RequestTemplate: command=%s, system=%s, system_version=%s, "
-            "instance_name=%s>"
-            % (self.command, self.system, self.system_version, self.instance_name)
+            "instance_name=%s, namespace=%s>"
+            % (
+                self.command,
+                self.system,
+                self.system_version,
+                self.instance_name,
+                self.namespace,
+            )
         )
 
 
@@ -353,6 +369,7 @@ class Request(RequestTemplate):
         updated_at=None,
         has_parent=None,
         requester=None,
+        namespace=None,
     ):
         super(Request, self).__init__(
             system=system,
@@ -362,6 +379,7 @@ class Request(RequestTemplate):
             parameters=parameters,
             comment=comment,
             metadata=metadata,
+            namespace=namespace,
         )
         self.id = id
         self.parent = parent
@@ -379,13 +397,14 @@ class Request(RequestTemplate):
     def __repr__(self):
         return (
             "<Request: command=%s, status=%s, system=%s, system_version=%s, "
-            "instance_name=%s>"
+            "instance_name=%s, namespace=%s>"
             % (
                 self.command,
                 self.status,
                 self.system,
                 self.system_version,
                 self.instance_name,
+                self.namespace,
             )
         )
 
@@ -440,6 +459,7 @@ class System(object):
         icon_name=None,
         display_name=None,
         metadata=None,
+        namespace=None,
     ):
         self.name = name
         self.description = description
@@ -451,12 +471,17 @@ class System(object):
         self.icon_name = icon_name
         self.display_name = display_name
         self.metadata = metadata or {}
+        self.namespace = namespace
 
     def __str__(self):
         return "%s-%s" % (self.name, self.version)
 
     def __repr__(self):
-        return "<System: name=%s, version=%s>" % (self.name, self.version)
+        return "<System: name=%s, version=%s, namespace=%s>" % (
+            self.name,
+            self.version,
+            self.namespace,
+        )
 
     @property
     def instance_names(self):
@@ -641,23 +666,31 @@ class Event(object):
     schema = "EventSchema"
 
     def __init__(
-        self, name=None, payload=None, error=None, metadata=None, timestamp=None
+        self,
+        name=None,
+        payload=None,
+        error=None,
+        metadata=None,
+        timestamp=None,
+        namespace=None,
     ):
         self.name = name
         self.payload = payload
         self.error = error
         self.metadata = metadata or {}
         self.timestamp = timestamp
+        self.namespace = namespace
 
     def __str__(self):
         return "%s: %s, %s" % (self.name, self.payload, self.metadata)
 
     def __repr__(self):
-        return "<Event: name=%s, error=%s, payload=%s, metadata=%s>" % (
+        return "<Event: name=%s, error=%s, payload=%s, metadata=%s, namespace=%s>" % (
             self.name,
             self.error,
             self.payload,
             self.metadata,
+            self.namespace,
         )
 
 
@@ -674,6 +707,7 @@ class Queue(object):
         system_id=None,
         display=None,
         size=None,
+        namespace=None,
     ):
         self.name = name
         self.system = system
@@ -682,12 +716,17 @@ class Queue(object):
         self.system_id = system_id
         self.display = display
         self.size = size
+        self.namespace = namespace
 
     def __str__(self):
         return "%s: %s" % (self.name, self.size)
 
     def __repr__(self):
-        return "<Queue: name=%s, size=%s>" % (self.name, self.size)
+        return "<Queue: name=%s, size=%s, namespace=%s>" % (
+            self.name,
+            self.size,
+            self.namespace,
+        )
 
 
 class Principal(object):
@@ -726,22 +765,32 @@ class Role(object):
     schema = "RoleSchema"
 
     def __init__(
-        self, id=None, name=None, description=None, roles=None, permissions=None
+        self,
+        id=None,
+        name=None,
+        description=None,
+        roles=None,
+        permissions=None,
+        namespace=None,
     ):
         self.id = id
         self.name = name
         self.description = description
         self.roles = roles
         self.permissions = permissions
+        self.namespace = namespace
 
     def __str__(self):
         return "%s" % self.name
 
     def __repr__(self):
-        return "<Role: name=%s, roles=%s, permissions=%s>" % (
+        return "<Role: name=%s, roles=%s, permissions=%s, namespace=%s>" % (
             self.name,
-            self.roles,
+            "[" + ", ".join([str(role) for role in self.roles]) + "]"
+            if self.roles
+            else "[]",
             self.permissions,
+            self.namespace,
         )
 
 
@@ -785,6 +834,7 @@ class Job(object):
         success_count=None,
         error_count=None,
         status=None,
+        namespace=None,
     ):
         self.id = id
         self.name = name
@@ -797,12 +847,17 @@ class Job(object):
         self.success_count = success_count
         self.error_count = error_count
         self.status = status
+        self.namespace = namespace
 
     def __str__(self):
         return "%s: %s" % (self.name, self.id)
 
     def __repr__(self):
-        return "<Job: name=%s, id=%s>" % (self.name, self.id)
+        return "<Job: name=%s, id=%s, namespace=%s>" % (
+            self.name,
+            self.id,
+            self.namespace,
+        )
 
 
 class DateTrigger(object):

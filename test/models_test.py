@@ -14,11 +14,7 @@ from brewtils.models import (
     System,
     Choices,
     LoggingConfig,
-    Event,
-    Queue,
     Principal,
-    Role,
-    RequestTemplate,
 )
 
 
@@ -29,7 +25,9 @@ def param1():
 
 @pytest.fixture
 def command1(param1):
-    return Command(name="foo", description="bar", parameters=[param1])
+    return Command(
+        name="foo", description="bar", parameters=[param1], namespace="default"
+    )
 
 
 class TestCommand(object):
@@ -102,21 +100,22 @@ class TestCommand(object):
     def test_has_same_parameters(self, p1, p2):
         assert not Command(parameters=p1).has_different_parameters(p2)
 
-    def test_str(self):
-        assert "foo" == str(Command(name="foo"))
+    def test_str(self, bg_command):
+        assert str(bg_command) == "speak"
 
-    def test_repr(self):
-        assert "<Command: foo>" == repr(Command(name="foo"))
+    def test_repr(self, bg_command):
+        assert repr(bg_command) == "<Command: name=speak, namespace=default>"
 
 
 class TestInstance(object):
-    def test_str(self):
-        assert "name" == str(Instance(name="name"))
+    def test_str(self, bg_instance):
+        assert str(bg_instance) == "default"
 
-    def test_repr(self):
-        instance = Instance(name="name", status="RUNNING")
-        assert "name" in repr(instance)
-        assert "RUNNING" in repr(instance)
+    def test_repr(self, bg_instance):
+        assert (
+            repr(bg_instance)
+            == "<Instance: name=default, status=RUNNING, namespace=default>"
+        )
 
 
 class TestChoices(object):
@@ -215,32 +214,28 @@ class TestParameter(object):
 
 
 class TestRequestTemplate(object):
-    @pytest.fixture
-    def request_template(self):
-        return RequestTemplate(command="command", system="system")
+    def test_str(self, bg_request_template):
+        assert str(bg_request_template) == "speak"
 
-    def test_str(self, request_template):
-        assert str(request_template) == "command"
-
-    def test_repr(self, request_template):
-        assert "name" in repr(request_template)
-        assert "system" in repr(request_template)
+    def test_repr(self, bg_request_template):
+        assert repr(bg_request_template) == (
+            "<RequestTemplate: command=speak, system=system, system_version=1.0.0, "
+            "instance_name=default, namespace=default>"
+        )
 
 
 class TestRequest(object):
-    @pytest.fixture
-    def request1(self):
-        return Request(command="command", system="system", status="CREATED")
-
     def test_type_fields(self):
         assert Request.COMMAND_TYPES == Command.COMMAND_TYPES
 
-    def test_str(self, request1):
-        assert str(request1) == "command"
+    def test_str(self, bg_request):
+        assert str(bg_request) == "speak"
 
-    def test_repr(self, request1):
-        assert "name" in repr(request1)
-        assert "CREATED" in repr(request1)
+    def test_repr(self, bg_request):
+        assert repr(bg_request) == (
+            "<Request: command=speak, status=CREATED, system=system, "
+            "system_version=1.0.0, instance_name=default, namespace=default>"
+        )
 
     def test_set_valid_status(self):
         request = Request(status="CREATED")
@@ -257,15 +252,15 @@ class TestRequest(object):
         with pytest.raises(RequestStatusTransitionError):
             request.status = end
 
-    def test_is_ephemeral(self, request1):
-        assert not request1.is_ephemeral
-        request1.command_type = "EPHEMERAL"
-        assert request1.is_ephemeral
+    def test_is_ephemeral(self, bg_request):
+        assert not bg_request.is_ephemeral
+        bg_request.command_type = "EPHEMERAL"
+        assert bg_request.is_ephemeral
 
-    def test_is_json(self, request1):
-        assert not request1.is_json
-        request1.output_type = "JSON"
-        assert request1.is_json
+    def test_is_json(self, bg_request):
+        assert not bg_request.is_json
+        bg_request.output_type = "JSON"
+        assert bg_request.is_json
 
 
 class TestSystem(object):
@@ -330,12 +325,13 @@ class TestSystem(object):
     def test_has_same_commands(self, default_system, command):
         assert not default_system.has_different_commands([command])
 
-    def test_str(self, default_system):
-        assert str(default_system) == "foo-1.0.0"
+    def test_str(self, bg_system):
+        assert str(bg_system) == "system-1.0.0"
 
-    def test_repr(self, default_system):
-        assert "foo" in repr(default_system)
-        assert "1.0.0" in repr(default_system)
+    def test_repr(self, bg_system):
+        assert (
+            repr(bg_system) == "<System: name=system, version=1.0.0, namespace=default>"
+        )
 
 
 class TestPatchOperation(object):
@@ -430,43 +426,29 @@ class TestLoggingConfig(object):
 
 
 class TestEvent(object):
-    @pytest.fixture
-    def event(self):
-        return Event(
-            name="REQUEST_CREATED",
-            error=False,
-            payload={"request": "request"},
-            metadata={},
+    def test_str(self, bg_event):
+        assert (
+            str(bg_event)
+            == "REQUEST_CREATED: {'id': '58542eb571afd47ead90d25e'}, {'extra': 'info'}"
         )
 
-    def test_str(self, event):
-        assert str(event) == "REQUEST_CREATED: {'request': 'request'}, {}"
-
-    def test_repr(self, event):
+    def test_repr(self, bg_event):
         assert (
-            repr(event) == "<Event: name=REQUEST_CREATED, error=False, "
-            "payload={'request': 'request'}, metadata={}>"
+            repr(bg_event) == "<Event: name=REQUEST_CREATED, error=False, "
+            "payload={'id': '58542eb571afd47ead90d25e'}, metadata={'extra': 'info'}, "
+            "namespace=default>"
         )
 
 
 class TestQueue(object):
-    @pytest.fixture
-    def queue(self):
-        return Queue(
-            name="echo.1-0-0.default",
-            system="echo",
-            version="1.0.0",
-            instance="default",
-            system_id="1234",
-            display="foo.1-0-0.default",
-            size=3,
+    def test_str(self, bg_queue):
+        assert str(bg_queue) == "echo.1-0-0.default: 3"
+
+    def test_repr(self, bg_queue):
+        assert (
+            repr(bg_queue)
+            == "<Queue: name=echo.1-0-0.default, size=3, namespace=default>"
         )
-
-    def test_str(self, queue):
-        assert str(queue) == "echo.1-0-0.default: 3"
-
-    def test_repr(self, queue):
-        assert repr(queue) == "<Queue: name=echo.1-0-0.default, size=3>"
 
 
 class TestPrincipal(object):
@@ -485,45 +467,52 @@ class TestPrincipal(object):
 
 
 class TestRole(object):
-    @pytest.fixture
-    def role(self):
-        return Role(name="bg-admin", roles=["bg-anonymous"], permissions=["bg-all"])
+    def test_str(self, bg_role):
+        assert str(bg_role) == "bg-admin"
 
-    def test_str(self, role):
-        assert str(role) == "bg-admin"
-
-    def test_repr(self, role):
+    def test_repr(self, bg_role):
         assert (
-            repr(role) == "<Role: name=bg-admin, roles=['bg-anonymous'], "
-            "permissions=['bg-all']>"
+            repr(bg_role) == "<Role: name=bg-admin, roles=[bg-anonymous], "
+            "permissions=['bg-all'], namespace=default>"
         )
 
 
 @pytest.mark.parametrize(
-    "model,str_expected,repr_expected",
+    "model,expected",
     [
-        (
-            lazy_fixture("bg_job"),
-            "job_name: 58542eb571afd47ead90d26a",
-            "<Job: name=job_name, id=58542eb571afd47ead90d26a>",
-        ),
+        (lazy_fixture("bg_job"), "job_name: 58542eb571afd47ead90d26a"),
         (
             lazy_fixture("bg_date_trigger"),
-            "<DateTrigger: run_date=2016-01-01 00:00:00>",
             "<DateTrigger: run_date=2016-01-01 00:00:00>",
         ),
         (
             lazy_fixture("bg_interval_trigger"),
             "<IntervalTrigger: weeks=1, days=1, hours=1, minutes=1, seconds=1>",
-            "<IntervalTrigger: weeks=1, days=1, hours=1, minutes=1, seconds=1>",
         ),
-        (
-            lazy_fixture("bg_cron_trigger"),
-            "<CronTrigger: */1 */1 */1 */1 */1>",
-            "<CronTrigger: */1 */1 */1 */1 */1>",
-        ),
+        (lazy_fixture("bg_cron_trigger"), "<CronTrigger: */1 */1 */1 */1 */1>"),
     ],
 )
-def test_str(model, str_expected, repr_expected):
-    assert str(model) == str_expected
-    assert repr(model) == repr_expected
+def test_str(model, expected):
+    assert str(model) == expected
+
+
+@pytest.mark.parametrize(
+    "model,expected",
+    [
+        (
+            lazy_fixture("bg_job"),
+            "<Job: name=job_name, id=58542eb571afd47ead90d26a, namespace=default>",
+        ),
+        (
+            lazy_fixture("bg_date_trigger"),
+            "<DateTrigger: run_date=2016-01-01 00:00:00>",
+        ),
+        (
+            lazy_fixture("bg_interval_trigger"),
+            "<IntervalTrigger: weeks=1, days=1, hours=1, minutes=1, seconds=1>",
+        ),
+        (lazy_fixture("bg_cron_trigger"), "<CronTrigger: */1 */1 */1 */1 */1>"),
+    ],
+)
+def test_repr(model, expected):
+    assert repr(model) == expected

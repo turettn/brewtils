@@ -129,6 +129,7 @@ class CommandSchema(BaseSchema):
     template = fields.Str(allow_none=True)
     icon_name = fields.Str(allow_none=True)
     system = fields.Nested("SystemSchema", only=("id",), allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class InstanceSchema(BaseSchema):
@@ -142,6 +143,7 @@ class InstanceSchema(BaseSchema):
     queue_info = fields.Dict(allow_none=True)
     icon_name = fields.Str(allow_none=True)
     metadata = fields.Dict(allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class SystemSchema(BaseSchema):
@@ -156,6 +158,7 @@ class SystemSchema(BaseSchema):
     commands = fields.Nested("CommandSchema", many=True)
     display_name = fields.Str(allow_none=True)
     metadata = fields.Dict(allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class RequestTemplateSchema(BaseSchema):
@@ -168,6 +171,7 @@ class RequestTemplateSchema(BaseSchema):
     parameters = fields.Dict(allow_none=True)
     comment = fields.Str(allow_none=True)
     metadata = fields.Dict(allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class RequestSchema(RequestTemplateSchema):
@@ -186,6 +190,7 @@ class RequestSchema(RequestTemplateSchema):
     updated_at = DateTime(allow_none=True, format="epoch", example="1500065932000")
     has_parent = fields.Bool(allow_none=True)
     requester = fields.String(allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class StatusInfoSchema(BaseSchema):
@@ -227,6 +232,7 @@ class EventSchema(BaseSchema):
     error = fields.Bool(allow_none=True)
     metadata = fields.Dict(allow_none=True)
     timestamp = DateTime(allow_none=True, format="epoch", example="1500065932000")
+    namespace = fields.Str(allow_none=True)
 
 
 class QueueSchema(BaseSchema):
@@ -238,6 +244,7 @@ class QueueSchema(BaseSchema):
     system_id = fields.Str(allow_none=True)
     display = fields.Str(allow_none=True)
     size = fields.Integer(allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class PrincipalSchema(BaseSchema):
@@ -257,6 +264,7 @@ class RoleSchema(BaseSchema):
     description = fields.Str(allow_none=True)
     roles = fields.Nested("self", many=True, allow_none=True)
     permissions = fields.List(fields.Str(), allow_none=True)
+    namespace = fields.Str(allow_none=True)
 
 
 class RefreshTokenSchema(BaseSchema):
@@ -344,3 +352,4 @@ class JobSchema(BaseSchema):
     success_count = fields.Int(allow_none=True)
     error_count = fields.Int(allow_none=True)
     status = fields.Str(allow_none=True)
+    namespace = fields.Str(allow_none=True)
