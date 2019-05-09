@@ -205,6 +205,9 @@ class Plugin(object):
             "BG_INSTANCE_NAME", "default"
         )
         self.metadata = metadata or {}
+        self.namespace = kwargs.get(
+            "namespace", os.environ.get("BG_NAMESPACE", "default")
+        )
 
         self.instance = None
         self.queue_connection_params = None
@@ -226,6 +229,7 @@ class Plugin(object):
             self.metadata,
             kwargs.get("display_name", None),
             kwargs.get("max_instances", None),
+            self.namespace,
         )
 
         self.unique_name = "%s[%s]-%s" % (
@@ -242,7 +246,10 @@ class Plugin(object):
         self.admin_pool = ThreadPoolExecutor(max_workers=1)
 
         self.bm_client = EasyClient(
-            logger=self.logger, parser=self.parser, **connection_parameters
+            logger=self.logger,
+            parser=self.parser,
+            namespace=self.namespace,
+            **connection_parameters
         )
 
     def run(self):
@@ -438,6 +445,7 @@ class Plugin(object):
                 description=self.system.description,
                 display_name=self.system.display_name,
                 icon_name=self.system.icon_name,
+                namespace=self.system.namespace,
             )
         else:
             self.system = self.bm_client.create_system(self.system)
@@ -760,6 +768,7 @@ class Plugin(object):
         metadata,
         display_name,
         max_instances,
+        namespace,
     ):
         if system:
             if (
@@ -769,6 +778,7 @@ class Plugin(object):
                 or icon_name
                 or display_name
                 or max_instances
+                or namespace
             ):
                 raise ValidationError(
                     "Sorry, you can't specify a system as well as system "
@@ -803,6 +813,7 @@ class Plugin(object):
                 instances=[Instance(name=inst_name)],
                 metadata=metadata,
                 display_name=display_name,
+                namespace=namespace,
             )
 
         return system

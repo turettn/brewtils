@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import warnings
+from simplejson import JSONDecodeError
 
 import requests.exceptions
 import wrapt
@@ -17,7 +18,7 @@ from brewtils.errors import (
     WaitExceededError,
 )
 from brewtils.models import Event, PatchOperation
-from brewtils.rest.client import RestClient
+from brewtils.rest.client import RestClientV2
 from brewtils.schema_parser import SchemaParser
 
 
@@ -41,21 +42,26 @@ def handle_response_failure(response, default_exc=RestError, raise_404=True):
         RestConnectionError: Status code 503
         default_exc: Any other status code
     """
+    try:
+        response_text = response.json()
+    except JSONDecodeError:
+        response_text = response.text
+
     if response.status_code == 404:
         if raise_404:
-            raise NotFoundError(response.json())
+            raise NotFoundError(response_text)
         else:
             return None
     elif response.status_code == 408:
-        raise WaitExceededError(response.json())
+        raise WaitExceededError(response_text)
     elif response.status_code == 409:
-        raise ConflictError(response.json())
+        raise ConflictError(response_text)
     elif 400 <= response.status_code < 500:
-        raise ValidationError(response.json())
+        raise ValidationError(response_text)
     elif response.status_code == 503:
-        raise RestConnectionError(response.json())
+        raise RestConnectionError(response_text)
     else:
-        raise default_exc(response.json())
+        raise default_exc(response_text)
 
 
 def wrap_response(
@@ -155,7 +161,7 @@ class EasyClient(object):
         self.logger = logger or logging.getLogger(__name__)
         self.parser = parser or SchemaParser()
 
-        self.client = RestClient(
+        self.client = RestClientV2(
             bg_host=bg_host,
             bg_port=bg_port,
             ssl_enabled=ssl_enabled,
@@ -277,7 +283,7 @@ class EasyClient(object):
         return self.client.post_systems(self.parser.serialize_system(system))
 
     @wrap_response(parse_method="parse_system", parse_many=False, default_exc=SaveError)
-    def update_system(self, system_id, new_commands=None, **kwargs):
+    def update_system(self, system_id, new_commands=None, namespace=None, **kwargs):
         """Update a System
 
         Args:
@@ -311,7 +317,7 @@ class EasyClient(object):
                 operations.append(PatchOperation("replace", "/%s" % key, value))
 
         return self.client.patch_system(
-            system_id, self.parser.serialize_patch(operations, many=True)
+            system_id, self.parser.serialize_patch(operations, many=True), namespace=namespace
         )
 
     def remove_system(self, **kwargs):
