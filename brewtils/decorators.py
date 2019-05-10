@@ -18,7 +18,7 @@ except ImportError:
     from lark.common import ParseError
 
 from brewtils.choices import parse
-from brewtils.errors import PluginParamError
+from brewtils.errors import PluginParamError, PluginError
 from brewtils.models import Command, Parameter, Choices
 
 if sys.version_info.major == 2:
@@ -360,18 +360,35 @@ def _update_func_command(func_command, generated_command):
 
 
 def _generate_command_from_function(func):
-    """Generates a Command from a function. Uses first line of pydoc as the description."""
-    # Required for Python 2/3 compatibility
-    if hasattr(func, "func_name"):
-        command_name = func.func_name
-    else:
-        command_name = func.__name__
+    """Generate a Command from a function.
+
+    Will use the first line of the docstring as the description, if present.
+
+    Args:
+        func: The input function
+
+    Returns:
+        The Command
+
+    """
+    # class and static methods need to get the actual function object
+    _func = getattr(func, "__func__", func)
 
     # Required for Python 2/3 compatibility
-    if hasattr(func, "func_doc"):
-        docstring = func.func_doc
+    if hasattr(_func, "func_name"):
+        command_name = _func.func_name
+    elif hasattr(_func, "__name__"):
+        command_name = _func.__name__
     else:
-        docstring = func.__doc__
+        raise PluginError("Unable to determine name for %r" % func)
+
+    # Required for Python 2/3 compatibility
+    if hasattr(_func, "func_doc"):
+        docstring = _func.func_doc
+    elif hasattr(_func, "__doc__"):
+        docstring = _func.__doc__
+    else:
+        docstring = None
 
     return Command(
         name=command_name,
@@ -381,20 +398,32 @@ def _generate_command_from_function(func):
 
 
 def _generate_params_from_function(func):
-    """Generate Parameters from function arguments.
-    Will set the Parameter key, default value, and optional value."""
+    """Generate Parameters from a function.
+
+    Parameters will have key, default, and optional values set.
+
+    Args:
+        func: The input function
+
+    Returns:
+        List of Parameters
+
+    """
+    # class and static methods need to get the actual function object
+    _func = getattr(func, "__func__", func)
+
     parameters_to_return = []
 
-    code = six.get_function_code(func)
+    code = six.get_function_code(_func)
     function_arguments = list(code.co_varnames or [])[: code.co_argcount]
-    function_defaults = list(six.get_function_defaults(func) or [])
+    function_defaults = list(six.get_function_defaults(_func) or [])
 
     while len(function_defaults) != len(function_arguments):
         function_defaults.insert(0, None)
 
     for index, param_name in enumerate(function_arguments):
-        # Skip Self or Class reference
-        if index == 0 and isinstance(func, types.FunctionType):
+        # instance and class methods need to skip the self / cls parameter
+        if index == 0 and not isinstance(func, staticmethod):
             continue
 
         default = function_defaults[index]
