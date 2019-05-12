@@ -171,6 +171,7 @@ class RestClient(object):
             self.user_url = self.base_url + "api/v1/users/"
 
             self.event_url = self.base_url + "api/vbeta/events/"
+            self.file_url = self.base_url + "api/vbeta/files/"
         else:
             raise ValueError("Invalid beer-garden API version: %s" % api_version)
 
@@ -441,6 +442,10 @@ class RestClient(object):
         :param user_identifier: ID or username of User
         """
         return self.session.get(self.user_url + user_identifier)
+
+    @enable_auth
+    def get_file(self, file_id, **kwargs):
+        return self.session.get(self.file_url + file_id, **kwargs)
 
     def get_tokens(self, username=None, password=None):
         """Use a username and password to get access and refresh tokens

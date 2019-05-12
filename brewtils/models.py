@@ -23,6 +23,7 @@ __all__ = [
     "RefreshToken",
     "Job",
     "RequestTemplate",
+    "RequestFile",
     "DateTrigger",
     "CronTrigger",
     "IntervalTrigger",
@@ -45,6 +46,7 @@ class Events(Enum):
     SYSTEM_REMOVED = 13
     QUEUE_CLEARED = 14
     ALL_QUEUES_CLEARED = 15
+    FILE_CREATED = 16
 
 
 class Command(object):
@@ -92,6 +94,14 @@ class Command(object):
         :return list_of_parameters:
         """
         return [p.key for p in self.parameters]
+
+    def parameter_keys_by_type(self, desired_type):
+        """Returns all parameter keys for the desired type.
+
+        :param desired_type:
+        :return: An array of array of key names.
+        """
+        return [p.keys_by_type(desired_type) for p in self.parameters]
 
     def get_parameter_by_key(self, key):
         """Given a Key, it will return the parameter (or None) with that key
@@ -209,6 +219,7 @@ class Parameter(object):
         "Dictionary",
         "Date",
         "DateTime",
+        "Bytes",
     )
     FORM_INPUT_TYPES = ("textarea",)
 
@@ -228,6 +239,7 @@ class Parameter(object):
         minimum=None,
         regex=None,
         form_input_type=None,
+        type_info=None,
     ):
         self.key = key
         self.type = type
@@ -243,6 +255,7 @@ class Parameter(object):
         self.minimum = minimum
         self.regex = regex
         self.form_input_type = form_input_type
+        self.type_info = type_info
 
     def __str__(self):
         return self.key
@@ -254,6 +267,22 @@ class Parameter(object):
             self.description,
         )
 
+    def keys_by_type(self, desired_type):
+        keys = []
+        if self.type == desired_type:
+            keys.append(self.key)
+
+        if self.parameters:
+            for p in self.parameters:
+                nested_keys = p.keys_by_type(desired_type)
+                if nested_keys:
+                    if not keys:
+                        keys = [self.key]
+
+                    keys.append(nested_keys)
+
+        return keys
+
     def is_different(self, other):
         if not type(other) is type(self):
             return True
@@ -261,6 +290,7 @@ class Parameter(object):
         fields_to_compare = [
             "key",
             "type",
+            "type_info",
             "multi",
             "optional",
             "default",
@@ -288,6 +318,29 @@ class Parameter(object):
                 return True
 
         return False
+
+
+class RequestFile(object):
+
+    schema = "RequestFileSchema"
+
+    def __init__(
+        self, content_type=None, storage_type=None, filename=None, external_link=None
+    ):
+        self.content_type = content_type
+        self.storage_type = storage_type
+        self.filename = filename
+        self.external_link = external_link
+
+    def __str__(self):
+        return self.filename
+
+    def __repr__(self):
+        return "<RequestFile: filename=%s, content_type=%s, storage_type=%s, " % (
+            self.filename,
+            self.content_type,
+            self.storage_type,
+        )
 
 
 class RequestTemplate(object):

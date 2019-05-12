@@ -718,6 +718,14 @@ class EasyClient(object):
             job_id, self.parser.serialize_patch(operations, many=True)
         )
 
+    @wrap_response(default_exc=FetchError)
+    def stream_to_file(self, file_id, writer, **kwargs):
+        chunk_size = kwargs.get("chunk_size", 4096)
+        with self.client.get_file(file_id, stream=True) as response:
+            response.raise_for_status()
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                writer.write(chunk)
+
 
 class BrewmasterEasyClient(EasyClient):
     def __init__(self, *args, **kwargs):
